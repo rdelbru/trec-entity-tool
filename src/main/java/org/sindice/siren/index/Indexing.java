@@ -54,8 +54,6 @@ import org.sindice.siren.analysis.TupleAnalyzer.URINormalisation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 /**
  * Index a list of entities, creating incoming, outgoing triples fields, subject
  * and type fields. The type field is a grouping of the rdf:type objects for this
@@ -192,7 +190,7 @@ public abstract class Indexing implements Iterator<Entity> {
     tuple.setURINormalisation(URINormalisation.LOCALNAME);
     fieldAnalyzers.put(OUTGOING_TRIPLE, tuple);
     fieldAnalyzers.put(INCOMING_TRIPLE, tuple);
-    
+
     final IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_31, new PerFieldAnalyzerWrapper(defaultAnalyzer, fieldAnalyzers));
     
     // Disable compound file
@@ -268,7 +266,6 @@ public abstract class Indexing implements Iterator<Entity> {
 
   @Override
   public void remove() {
-    throw new NotImplementedException();
   }
   
 }
