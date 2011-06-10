@@ -1,3 +1,32 @@
 Tool for TREC Entity Track 2011
 
-Coming soon !
+This tool is a demo for indexing and querying the Sindice dataset 2011 available
+at [1]. Its purpose is to show how to extract entities from the dataset and to
+index them using SIREn [2]. Some example queries are written in the JUnit tests.
+The tool is composed of the following classes:
+- Indexing: it takes care of creating the index;
+- Sindice{ED,DE}Indexing: it extracts entities from the dataset, depending on
+  the format;
+- Entity: it is the class representing an Entity;
+- Utils: it contains utility methods used for indexing.
+
+The command line interface is the class org.sindice.siren.index.IndexingCLI.
+
+To create a jar with maven:
+	$ mvn assembly:assembly
+this will create the jar target/siren-eostool-0.1-SNAPSHOT-assembly.jar
+
+To run the JUnit tests with maven:
+	$ mvn test
+
+To create an index for the Sindice-ED dataset format:
+	$ java -cp $JAR org.sindice.siren.index.IndexingCLI \
+					--dumps-dir src/test/resources/ 	\
+					--index-dir /tmp/test-ED			\
+					--format SINDICE_ED
+	where $JAR=target/siren-eostool-0.1-SNAPSHOT-assembly.jar
+This will create an index at /tmp/test-ED from the files at src/test/resources/
+corresponding to the dataset format SINDICE_ED.
+
+[1] http://data.sindice.com/trec2011/index.html
+[2] https://github.com/rdelbru/SIREn
