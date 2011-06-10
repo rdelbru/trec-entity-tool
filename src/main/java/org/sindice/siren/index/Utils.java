@@ -16,6 +16,7 @@
 package org.sindice.siren.index;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,6 +24,13 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.RDFParseException;
+import org.openrdf.rio.RDFParser;
+import org.openrdf.rio.helpers.StatementCollector;
+import org.openrdf.rio.ntriples.NTriplesParser;
 
 /**
  * Helper functions for indexing
@@ -31,8 +39,10 @@ public class Utils {
 
   /* byte array used for reading the compressed tar files */
   private static final ByteBuffer     bbuffer   = ByteBuffer.allocate(1024);
-  private static final String         RDF_TYPE  = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>";
+  private static final String         RDF_TYPE  = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
   private static final StringBuilder  sb        = new StringBuilder();
+  private static RDFParser            parser    = null;
+  private static StatementCollector   collector = null;
   
   /**
    * Read size bytes from the reader at the current position
@@ -73,6 +83,17 @@ public class Utils {
     final Map<String, StringBuilder> map = new TreeMap<String, StringBuilder>();
     flattenNTriples(triples, map, types, isOut);
   }
+  
+  private static void initParser() {
+    if (parser == null) {
+      parser = (RDFParser) new NTriplesParser();
+      collector = new StatementCollector();
+      parser.setRDFHandler(collector);
+      parser.setVerifyData(false);
+      parser.setStopAtFirstError(false);
+    }
+    collector.clear();
+  }
 
   /**
    * Flatten a list of triples to n-tuples containing many objects for the same
@@ -83,30 +104,31 @@ public class Utils {
    * @return The n-tuples concatenated.
    */
   private static void flattenNTriples(final StringBuilder triples, final Map<String, StringBuilder> map, final HashSet<String> types, final boolean isOut) {
-    for (int i = 0, j = 0; i < triples.length(); i++) {
-      if (triples.charAt(i) == '\n') { // for each triple
-        final String value = triples.substring(j, i);
-        j = i + 1;
-        
-        final int firstWhitespace = value.indexOf(' ');
-        final int secondWhitespace = value.indexOf(' ', firstWhitespace + 1);
-        final int lastDot = value.lastIndexOf('.');
-        if (firstWhitespace == -1 || secondWhitespace == -1 || lastDot == -1) {
-          continue; // probably invalid triple, just skip it
-        }
-        final String predicate = value.substring(firstWhitespace + 1, secondWhitespace);
+    try {
+      initParser();
+      parser.parse(new StringReader(triples.toString()), "");
+      for (Statement st : collector.getStatements()) {
+        sb.setLength(0);
+        final String subject = sb.append('<').append(st.getSubject().toString()).append('>').toString();
+        sb.setLength(0);
+        final String predicate = sb.append('<').append(st.getPredicate().toString()).append('>').toString();
+        sb.setLength(0);
+        final String object = (st.getObject() instanceof URI) ? sb.append('<').append(st.getObject().toString()).append('>').toString()
+                                                              : st.getObject().toString();
         if (types != null && predicate.equals(RDF_TYPE)) {
-          types.add(value.substring(secondWhitespace + 1, lastDot - 1));
+          types.add(st.getObject().toString());
         } else {
-          final String object = isOut ? value.substring(secondWhitespace + 1, lastDot) : value.substring(0, firstWhitespace + 1);
           StringBuilder tb = map.get(predicate);
           if (tb == null) {
             tb = new StringBuilder();
             map.put(predicate, tb);
           }
-          tb.append(object);          
+          tb.append(isOut ? object : subject);
         }
       }
+    } catch (RDFParseException e1) {
+    } catch (RDFHandlerException e1) {
+    } catch (IOException e1) {
     }
     // Replace the string buffer with the flattened triples.
     triples.setLength(0);

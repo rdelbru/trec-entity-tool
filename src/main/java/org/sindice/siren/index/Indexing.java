@@ -51,8 +51,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.sindice.siren.analysis.TupleAnalyzer;
 import org.sindice.siren.analysis.TupleAnalyzer.URINormalisation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Index a list of entities, creating incoming, outgoing triples fields, subject
@@ -65,10 +63,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class Indexing implements Iterator<Entity> {
   
-  protected static final Logger     logger            = LoggerFactory.getLogger(Indexing.class);
-  
   /* Perform a commit by batch of COMMIT documents */
-  protected final int               COMMIT            = 10000;
+  public static int                 COMMIT            = 10000;
   
   // FIELDS
   final static public String        INCOMING_TRIPLE   = "incoming-triple";
@@ -115,7 +111,7 @@ public abstract class Indexing implements Iterator<Entity> {
     this.indexDir = dir;
     this.writer = initializeIndexWriter(this.indexDir);
     reader = getTarInputStream(this.input[0]);
-    logger.info("Creating index from input located at {}", inputDir.getAbsolutePath());
+    System.out.println("Creating index from input located at " + inputDir.getAbsolutePath());
   }
   
   /**
@@ -162,7 +158,7 @@ public abstract class Indexing implements Iterator<Entity> {
         reader = getTarInputStream(input[inputPos]);
       }
     } catch (IOException e) {
-      logger.error("Error while reading the input: {}\n{}", input[inputPos], e);
+      System.err.println("Error while reading the input: " + input[inputPos] + "\n" + e);
     }
     /*
      *  When returning from this method, the inputstream is positionned at a regular file,
@@ -245,7 +241,7 @@ public abstract class Indexing implements Iterator<Entity> {
   throws CorruptIndexException, IOException {
     if (!indexing || ++counter == COMMIT) { // Index by batch
       writer.commit();
-      logger.info("Commited {} entities. Last entity: {}", indexing ? COMMIT : counter, subject);
+      System.out.println("Commited " + (indexing ? COMMIT : counter) + " entities. Last entity: " + subject);
     }
     return counter;
   }
