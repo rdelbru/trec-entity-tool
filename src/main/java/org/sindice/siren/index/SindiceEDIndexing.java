@@ -34,6 +34,7 @@ public class SindiceEDIndexing extends Indexing {
 
   /* the current entity */
   private final Entity entity = new Entity();
+  private final long MAX_ENTITY_SIZE = 64L*1048576L; // 64MB
   
   /**
    * @param inputDir
@@ -52,11 +53,14 @@ public class SindiceEDIndexing extends Indexing {
   @Override
   public Entity next() {
     final String entityID = tarEntry.getName().substring(0, tarEntry.getName().indexOf('/') + 1);
+    long entityByteSize = 0;
     
     entity.clear();
     try {
       do {
-        // metadata
+        /*
+         * metadata
+         */
         if (entity.sbMetadata.length() == 0) {
           Utils.getFile(reader, tarEntry.getSize(), entity.sbMetadata);
           final int newLine = entity.sbMetadata.indexOf("\n");
@@ -64,28 +68,40 @@ public class SindiceEDIndexing extends Indexing {
           entity.subject = entity.sbMetadata.substring(newLine + 1);          
         } else // the metadata has already been read.
           reader.skip(tarEntry.getSize());
-        // outgoing-triples.nt
+        /*
+         * outgoing-triples.nt
+         */
         if (!hasNext()) {
           System.err.println("Error while Trying to get the outgoing-triples.nt from " + input[inputPos].getAbsolutePath() +
             ", entry name: " + tarEntry.getName());
           throw new IllegalStateException("entry file missing");
         }
-        Utils.getFile(reader, tarEntry.getSize(), entity.sbOutgoing);
-        // incoming-triples.nt
+        entityByteSize += tarEntry.getSize();
+        Utils.getFile(reader, tarEntry.getSize(), entity.sb);
+        // Strip outgoing triples from rdf:type statements
+        Utils.sortAndFlattenNTriples(entity.sb, entity.outTuples, entity.type, true);
+        /*
+         * incoming-triples.nt
+         */
         if (!hasNext()) {
           System.err.println("Error while Trying to get the incoming-triples.nt from " + input[inputPos].getAbsolutePath() +
             ", entry name: " + tarEntry.getName());
           throw new IllegalStateException("entry file missing");
         }
-        Utils.getFile(reader, tarEntry.getSize(), entity.sbIncoming);
+        entityByteSize += tarEntry.getSize();
+        if (entityByteSize > MAX_ENTITY_SIZE) {
+          // Too big entity: just keep outgoing-triples, as they are the most informative ones.
+          reader.skip(tarEntry.getSize());
+          entity.inTuples.clear();
+        } else {
+          Utils.getFile(reader, tarEntry.getSize(), entity.sb);
+          Utils.sortAndFlattenNTriples(entity.sb, entity.inTuples, null, false);
+        }
       } while (hasNext(entityID)); // while documents describe the same entity
     } catch (IOException e) {
       System.err.println("Couldn't read a compressed file from " + input[inputPos].getAbsolutePath() +
         ", entry name: " + tarEntry.getName());
     }
-    // Strip outgoing triples from rdf:type statements
-    Utils.sortAndFlattenNTriples(entity.sbOutgoing, entity.type, true);
-    Utils.sortAndFlattenNTriples(entity.sbIncoming, null, false);
     return entity;
   }
 

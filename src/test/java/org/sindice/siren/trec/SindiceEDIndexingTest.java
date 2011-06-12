@@ -25,9 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
@@ -66,8 +64,7 @@ public class SindiceEDIndexingTest {
     cell = new SirenCellQuery(new SirenTermQuery(outgoingField.createTerm("usd")));
     tq.add(cell, Occur.MUST);
     TopDocs td = searcher.search(tq, 10);
-    assertEquals(38, td.totalHits);
-    
+    assertEquals(44, td.totalHits);
     dir.close();
   }
   

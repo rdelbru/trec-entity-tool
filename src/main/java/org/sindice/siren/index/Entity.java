@@ -21,7 +21,9 @@
  */
 package org.sindice.siren.index;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 /**
  * An entity of the dataset
@@ -29,14 +31,15 @@ import java.util.HashSet;
 public class Entity {
 
   /* incoming-triples.nt */
-  final StringBuilder sbIncoming = new StringBuilder();
+  final HashMap<String, HashSet<String>> inTuples = new HashMap<String, HashSet<String>>();
   /* outgoing-triples.nt */
-  final StringBuilder sbOutgoing = new StringBuilder();
+  final HashMap<String, HashSet<String>> outTuples = new HashMap<String, HashSet<String>>();
   /* metadata */
   final StringBuilder sbMetadata = new StringBuilder();
-  
   /* rdf:type statement's objects */
   final HashSet<String> type = new HashSet<String>();
+  
+  final StringBuilder sb = new StringBuilder();
   
   String subject = ""; // The URI of the entity
   String context = ""; // The URL of the document where the entity is from
@@ -44,10 +47,21 @@ public class Entity {
   public void clear() {
     subject = "";
     context = "";
-    sbIncoming.setLength(0);
-    sbOutgoing.setLength(0);
+    inTuples.clear();
+    outTuples.clear();
+    sb.setLength(0);
     type.clear();
     sbMetadata.setLength(0);
+  }
+  
+  public String getTriples(boolean out) {
+    final HashMap<String, HashSet<String>> map = out ? this.outTuples : this.inTuples;
+    
+    sb.setLength(0);
+    for (Entry<String, HashSet<String>> e : map.entrySet()) {
+      sb.append(e.getKey()).append(' ').append(Utils.toString(e.getValue()));
+    }
+    return sb.toString();
   }
   
 }

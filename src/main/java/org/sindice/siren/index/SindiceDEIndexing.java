@@ -61,21 +61,21 @@ public class SindiceDEIndexing extends Indexing {
           ", entry name: " + tarEntry.getName());
         throw new IllegalStateException("entry file missing");
       }
-      Utils.getFile(reader, tarEntry.getSize(), entity.sbOutgoing);
+      Utils.getFile(reader, tarEntry.getSize(), entity.sb);
       // incoming-triples.nt
       if (!hasNext()) {
         System.err.println("Error while Trying to get the incoming-triples.nt from " + input[inputPos].getAbsolutePath() +
           ", entry name: " + tarEntry.getName());
         throw new IllegalStateException("entry file missing");
       }
-      Utils.getFile(reader, tarEntry.getSize(), entity.sbIncoming);
+      Utils.getFile(reader, tarEntry.getSize(), entity.sb);
     } catch (IOException e) {
       System.err.println("Couldn't read a compressed file from " + input[inputPos].getAbsolutePath() +
         ", entry name: " + tarEntry.getName());
     }
     // Strip outgoing triples from rdf:type statements
-    Utils.sortAndFlattenNTriples(entity.sbOutgoing, entity.type, true);
-    Utils.sortAndFlattenNTriples(entity.sbIncoming, null, false);
+    Utils.sortAndFlattenNTriples(entity.sb, entity.outTuples, entity.type, true);
+    Utils.sortAndFlattenNTriples(entity.sb, entity.inTuples, null, false);
     final int newLine = entity.sbMetadata.indexOf("\n");
     entity.context = entity.sbMetadata.substring(0, newLine);
     entity.subject = entity.sbMetadata.substring(newLine + 1);

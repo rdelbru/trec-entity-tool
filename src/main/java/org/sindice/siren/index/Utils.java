@@ -18,10 +18,9 @@ package org.sindice.siren.index;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.openrdf.model.Statement;
@@ -39,10 +38,25 @@ public class Utils {
 
   /* byte array used for reading the compressed tar files */
   private static final ByteBuffer     bbuffer   = ByteBuffer.allocate(1024);
-  private static final String         RDF_TYPE  = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+  private static final String         RDF_TYPE  = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>";
   private static final StringBuilder  sb        = new StringBuilder();
   private static RDFParser            parser    = null;
-  private static StatementCollector   collector = null;
+  private static StatementCollector   collector = null;  
+
+  // Efficient byte to char conversion
+  private static final int BYTE_RANGE = (1 + Byte.MAX_VALUE) - Byte.MIN_VALUE;
+  private static byte[] allBytes = new byte[BYTE_RANGE];
+  private static char[] byteToChars = new char[BYTE_RANGE];
+
+  static {
+    for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE; i++) {
+      allBytes[i - Byte.MIN_VALUE] = (byte) i;
+    }
+    String allBytesString = new String(allBytes, 0, Byte.MAX_VALUE - Byte.MIN_VALUE);
+    for (int i = 0; i < (Byte.MAX_VALUE - Byte.MIN_VALUE); i++) {
+      byteToChars[i] = allBytesString.charAt(i);
+    }
+  }
   
   /**
    * Read size bytes from the reader at the current position
@@ -61,13 +75,24 @@ public class Utils {
     while (size > bbuffer.capacity()) {
       reader.read(bbuffer.array(), 0, bbuffer.capacity());
       size -= bbuffer.capacity();
-      data.append(new String(bbuffer.array(), 0, bbuffer.capacity()));
+      toAsciiString(data, bbuffer.capacity());
       bbuffer.clear();
     }
     reader.read(bbuffer.array(), 0, (int) size);
-    data.append(new String(bbuffer.array(), 0, (int) size));
+    toAsciiString(data, (int) size);
   }
 
+  /**
+   * Convert the byte array in the platform encoding
+   * @param data the string buffer
+   * @param length number of bytes to decode
+   */
+  private static final void toAsciiString(final StringBuilder data, final int length) {
+    for (int i = 0; i < length; i++) {
+      data.append(byteToChars[(int) bbuffer.get(i) - Byte.MIN_VALUE]);
+    }
+  }
+  
   /**
    * Sort and flatten a list of triples to n-tuples containing many objects for
    * the same predicate. Generate one n-tuple per predicate.
@@ -75,12 +100,12 @@ public class Utils {
    * The sorted and flatten representation is generally more efficient in term
    * of index size than the normal flatten approach.
    * 
-   * @param values
-   *          The list of n-triples.
-   * @return The n-tuples concatenated.
+   * @param triples
+   * @param map
+   * @param types
+   * @param isOut
    */
-  public static void sortAndFlattenNTriples(final StringBuilder triples, final HashSet<String> types, final boolean isOut) {
-    final Map<String, StringBuilder> map = new TreeMap<String, StringBuilder>();
+  public static void sortAndFlattenNTriples(final StringBuilder triples, final HashMap<String, HashSet<String>> map, final HashSet<String> types, final boolean isOut) {
     flattenNTriples(triples, map, types, isOut);
   }
   
@@ -89,8 +114,6 @@ public class Utils {
       parser = (RDFParser) new NTriplesParser();
       collector = new StatementCollector();
       parser.setRDFHandler(collector);
-      parser.setVerifyData(false);
-      parser.setStopAtFirstError(false);
     }
     collector.clear();
   }
@@ -103,7 +126,7 @@ public class Utils {
    *          The list of n-triples.
    * @return The n-tuples concatenated.
    */
-  private static void flattenNTriples(final StringBuilder triples, final Map<String, StringBuilder> map, final HashSet<String> types, final boolean isOut) {
+  private static void flattenNTriples(final StringBuilder triples, final Map<String, HashSet<String>> map, final HashSet<String> types, final boolean isOut) {
     try {
       initParser();
       parser.parse(new StringReader(triples.toString()), "");
@@ -116,25 +139,23 @@ public class Utils {
         final String object = (st.getObject() instanceof URI) ? sb.append('<').append(st.getObject().toString()).append('>').toString()
                                                               : st.getObject().toString();
         if (types != null && predicate.equals(RDF_TYPE)) {
-          types.add(st.getObject().toString());
+          types.add(object);
         } else {
-          StringBuilder tb = map.get(predicate);
-          if (tb == null) {
-            tb = new StringBuilder();
-            map.put(predicate, tb);
+          HashSet<String> hs = map.get(predicate);
+          final String toAdd = isOut ? object : subject;
+          if (hs == null) {
+            hs = new HashSet<String>();
+            map.put(predicate, hs);
           }
-          tb.append(isOut ? object : subject);
+          if (hs.size() < 65535) // 2 ^ 16 - 1
+            hs.add(toAdd);
         }
       }
     } catch (RDFParseException e1) {
     } catch (RDFHandlerException e1) {
     } catch (IOException e1) {
     }
-    // Replace the string buffer with the flattened triples.
     triples.setLength(0);
-    for (Entry<String, StringBuilder> t : map.entrySet()) {
-      triples.append(t.getKey()).append(" ").append(t.getValue()).append(".\n");
-    }
   }
   
   /**

@@ -45,6 +45,7 @@ public class IndexingCLI {
   private final String          DUMPS_DIR   = "dumps-dir";
   private final String          INDEX_DIR   = "index-dir";
   private final String          FORMAT      = "format";
+  private final String          COMMIT      = "commit";
   
   private File dumpsDir;
   private File indexDir;
@@ -66,6 +67,8 @@ public class IndexingCLI {
           .withRequiredArg().ofType(File.class);
     parser.accepts(FORMAT, "The dataset format, either SINDICE_ED or SINDICE_DE")
           .withRequiredArg().ofType(Format.class);
+    parser.accepts(COMMIT, "Commit documents by batch of X")
+          .withRequiredArg().ofType(Integer.class).defaultsTo(Indexing.COMMIT);
   }
   
   private void printError(final String opt)
@@ -81,6 +84,8 @@ public class IndexingCLI {
       parser.printHelpOn(System.out);
       return;
     }
+    
+    Indexing.COMMIT = (Integer) opts.valueOf(COMMIT);
     
     // FORMAT
     if (opts.has(FORMAT)) {
