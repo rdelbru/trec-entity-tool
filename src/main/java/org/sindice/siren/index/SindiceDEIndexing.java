@@ -57,21 +57,21 @@ public class SindiceDEIndexing extends Indexing {
       Utils.getFile(reader, tarEntry.getSize(), entity.sbMetadata);
       // outgoing-triples.nt
       if (!hasNext()) {
-        System.err.println("Error while Trying to get the outgoing-triples.nt from " + input[inputPos].getAbsolutePath() +
-          ", entry name: " + tarEntry.getName());
+        logger.info("Error while Trying to get the outgoing-triples.nt from {}, entry name: {}",
+          input[inputPos].getAbsolutePath(), tarEntry.getName());
         throw new IllegalStateException("entry file missing");
       }
       Utils.getFile(reader, tarEntry.getSize(), entity.sb);
       // incoming-triples.nt
       if (!hasNext()) {
-        System.err.println("Error while Trying to get the incoming-triples.nt from " + input[inputPos].getAbsolutePath() +
-          ", entry name: " + tarEntry.getName());
+        logger.info("Error while Trying to get the incoming-triples.nt from {}, entry name: {}",
+          input[inputPos].getAbsolutePath(), tarEntry.getName());
         throw new IllegalStateException("entry file missing");
       }
       Utils.getFile(reader, tarEntry.getSize(), entity.sb);
     } catch (IOException e) {
-      System.err.println("Couldn't read a compressed file from " + input[inputPos].getAbsolutePath() +
-        ", entry name: " + tarEntry.getName());
+      logger.info("Error while Trying to get the incoming-triples.nt from {}, entry name: {}",
+        input[inputPos].getAbsolutePath(), tarEntry.getName());
     }
     // Strip outgoing triples from rdf:type statements
     Utils.sortAndFlattenNTriples(entity.sb, entity.outTuples, entity.type, true);

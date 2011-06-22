@@ -51,6 +51,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.sindice.siren.analysis.TupleAnalyzer;
 import org.sindice.siren.analysis.TupleAnalyzer.URINormalisation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Index a list of entities, creating incoming, outgoing triples fields, subject
@@ -62,6 +64,8 @@ import org.sindice.siren.analysis.TupleAnalyzer.URINormalisation;
  * predicate possess its related subject URIs.
  */
 public abstract class Indexing implements Iterator<Entity> {
+  
+  protected final Logger            logger            = LoggerFactory.getLogger(Indexing.class);
   
   /* Perform a commit by batch of COMMIT documents */
   public static int                 COMMIT            = 10000;
@@ -111,7 +115,8 @@ public abstract class Indexing implements Iterator<Entity> {
     this.indexDir = dir;
     this.writer = initializeIndexWriter(this.indexDir);
     reader = getTarInputStream(this.input[0]);
-    System.out.println("Creating index from input located at " + inputDir.getAbsolutePath());
+    logger.info("Creating index from input located at {} ({} files)", inputDir.getAbsolutePath(), input.length);
+    logger.info("Reading dump: {}", this.input[0]);
   }
   
   /**
@@ -155,10 +160,11 @@ public abstract class Indexing implements Iterator<Entity> {
         }
         // Next archive file
         reader.close();
+        logger.info("Reading dump: {}", this.input[inputPos]);
         reader = getTarInputStream(input[inputPos]);
       }
     } catch (IOException e) {
-      System.err.println("Error while reading the input: " + input[inputPos] + "\n" + e);
+      logger.error("Error while reading the input: {}\n{}", input[inputPos], e);
     }
     /*
      *  When returning from this method, the inputstream is positionned at a regular file,
@@ -239,9 +245,9 @@ public abstract class Indexing implements Iterator<Entity> {
    */
   private long commit(boolean indexing, long counter, String subject)
   throws CorruptIndexException, IOException {
-    if (!indexing || ++counter == COMMIT) { // Index by batch
+    if (!indexing || (++counter % COMMIT) == 0) { // Index by batch
       writer.commit();
-      System.out.println("Commited " + (indexing ? COMMIT : counter) + " entities. Last entity: " + subject);
+      logger.info("Commited {} entities. Last entity: {}", (indexing ? COMMIT : counter), subject);
     }
     return counter;
   }
