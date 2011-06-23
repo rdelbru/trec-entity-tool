@@ -12,21 +12,48 @@ The tool is composed of the following classes:
 
 The command line interface is the class org.sindice.siren.index.IndexingCLI.
 
-To create a jar with maven:
-	$ mvn assembly:assembly
-this will create the jar target/siren-eostool-0.1-SNAPSHOT-assembly.jar
+### Basic build steps ###
 
-To run the JUnit tests with maven:
-	$ mvn test
+  0) Install JDK 1.6 (or greater), Maven 2.0.9 (or greater)
+  1) Move to the root folder of the tool
+  2) Run maven
 
-To create an index for the Sindice-ED dataset format:
-	$ java -cp $JAR org.sindice.siren.index.IndexingCLI \
-					--dumps-dir src/test/resources/ 	\
-					--index-dir /tmp/test-ED			\
-					--format SINDICE_ED
-	where $JAR=target/siren-eostool-0.1-SNAPSHOT-assembly.jar
-This will create an index at /tmp/test-ED from the files at src/test/resources/
-corresponding to the dataset format SINDICE_ED.
+Step 0) Set up your development environment (JDK 1.6 or greater, Maven 2.0.9 or
+greater)
+
+We'll assume that you know how to get and set up the JDK - if you don't, then we
+suggest starting at http://java.sun.com and learning more about Java, before
+continuing as this tool is based on SIREn. SIREn runs with JDK 1.6 and later.
+
+Like many Open Source java projects, SIREn uses Apache Maven for build control.
+Specifically, you MUST use Maven version 2.0.9 or greater.
+
+Step 1) From the command line, change (cd) into the root directory of the tool
+
+The root directory contains the project pom.xml file. By default, you do not
+need to change any of the settings in this file, but you do need to run maven
+from this location so it knows where to find pom.xml.
+
+Step 2) Run maven
+
+Assuming you have maven in your PATH, typing the following commands at the shell
+prompt should run maven.
+
+  1-    To create a jar with maven:
+                $ mvn assembly:assembly
+        this will create the jar target/siren-eostool-0.1-SNAPSHOT-assembly.jar
+
+  2-    To run the JUnit tests with maven:
+                $ mvn test
+
+  3-    To create an index for the Sindice-ED dataset format:
+                $ java -cp $JAR org.sindice.siren.index.IndexingCLI     \
+                                --dumps-dir src/test/resources/         \
+                                --index-dir /tmp/test-ED		\
+                                --format SINDICE_ED
+                where $JAR=target/siren-eostool-0.1-SNAPSHOT-assembly.jar
+        This will create an index at /tmp/test-ED from the files at
+        src/test/resources/ corresponding to the dataset format SINDICE_ED.
 
 [1] http://data.sindice.com/trec2011/index.html
 [2] https://github.com/rdelbru/SIREn
