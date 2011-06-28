@@ -46,6 +46,7 @@ public class IndexingCLI {
   private final String          INDEX_DIR   = "index-dir";
   private final String          FORMAT      = "format";
   private final String          COMMIT      = "commit";
+  private final String          STORE       = "store";
   
   private File dumpsDir;
   private File indexDir;
@@ -69,6 +70,7 @@ public class IndexingCLI {
           .withRequiredArg().ofType(Format.class);
     parser.accepts(COMMIT, "Commit documents by batch of X")
           .withRequiredArg().ofType(Integer.class).defaultsTo(Indexing.COMMIT);
+    parser.accepts(STORE, "Store the triples, incomings and outogings, of entities");
   }
   
   private void printError(final String opt)
@@ -85,6 +87,7 @@ public class IndexingCLI {
       return;
     }
     
+    Indexing.STORE = opts.has(STORE);
     Indexing.COMMIT = (Integer) opts.valueOf(COMMIT);
     
     // FORMAT

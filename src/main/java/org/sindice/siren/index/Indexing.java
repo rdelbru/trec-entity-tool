@@ -69,6 +69,7 @@ public abstract class Indexing implements Iterator<Entity> {
   
   /* Perform a commit by batch of COMMIT documents */
   public static int                 COMMIT            = 10000;
+  public static boolean             STORE             = false;
   
   // FIELDS
   final static public String        INCOMING_TRIPLE   = "incoming-triple";
@@ -223,10 +224,10 @@ public abstract class Indexing implements Iterator<Entity> {
       entity = next();
       
       Document doc = new Document();
-      doc.add(new Field(SUBJECT, entity.subject, Store.YES, Index.NO));
-      doc.add(new Field(TYPE, Utils.toString(entity.type), Store.YES, Index.NO));
-      doc.add(new Field(OUTGOING_TRIPLE, entity.getTriples(true), Store.YES, Index.ANALYZED_NO_NORMS));
-      doc.add(new Field(INCOMING_TRIPLE, entity.getTriples(false), Store.YES, Index.ANALYZED_NO_NORMS));
+      doc.add(new Field(SUBJECT, entity.subject, Store.YES, Index.NOT_ANALYZED_NO_NORMS));
+      doc.add(new Field(TYPE, Utils.toString(entity.type), Store.YES, Index.ANALYZED_NO_NORMS));
+      doc.add(new Field(OUTGOING_TRIPLE, entity.getTriples(true), STORE ? Store.YES : Store.NO, Index.ANALYZED_NO_NORMS));
+      doc.add(new Field(INCOMING_TRIPLE, entity.getTriples(false), STORE ? Store.YES : Store.NO, Index.ANALYZED_NO_NORMS));
       writer.addDocument(doc);
       counter = commit(true, counter, entity.subject);
     }
