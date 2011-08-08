@@ -47,6 +47,7 @@ public class IndexingCLI {
   private final String          FORMAT      = "format";
   private final String          COMMIT      = "commit";
   private final String          STORE       = "store";
+  private final String          SKIP_TO     = "skip-to";
   
   private File dumpsDir;
   private File indexDir;
@@ -71,6 +72,8 @@ public class IndexingCLI {
     parser.accepts(COMMIT, "Commit documents by batch of X")
           .withRequiredArg().ofType(Integer.class).defaultsTo(Indexing.COMMIT);
     parser.accepts(STORE, "Store the triples, incomings and outogings, of entities");
+    parser.accepts(SKIP_TO, "Skips over the dumps strictly lower than X, e.g., ED-00010.tar.gz is filtered if 10 < X.")
+          .withRequiredArg().ofType(Integer.class).defaultsTo(0);
   }
   
   private void printError(final String opt)
@@ -89,6 +92,7 @@ public class IndexingCLI {
     
     Indexing.STORE = opts.has(STORE);
     Indexing.COMMIT = (Integer) opts.valueOf(COMMIT);
+    Indexing.SKIP_TO = (Integer) opts.valueOf(SKIP_TO);
     
     // FORMAT
     if (opts.has(FORMAT)) {

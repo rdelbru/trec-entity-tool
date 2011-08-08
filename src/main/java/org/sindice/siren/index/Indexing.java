@@ -70,6 +70,7 @@ public abstract class Indexing implements Iterator<Entity> {
   /* Perform a commit by batch of COMMIT documents */
   public static int                 COMMIT            = 10000;
   public static boolean             STORE             = false;
+  public static int                 SKIP_TO           = 0;
   
   // FIELDS
   final static public String        INCOMING_TRIPLE   = "incoming-triple";
@@ -101,7 +102,11 @@ public abstract class Indexing implements Iterator<Entity> {
       
       @Override
       public boolean accept(File dir, String name) {
-        return name.matches(getPattern());
+        if (name.matches(getPattern())) {
+          final int dump = Integer.valueOf(name.substring(3, name.indexOf('.')));
+          return dump >= SKIP_TO; // discards any dump files lower than #SKIP_TO
+        }
+        return false;
       }
       
     });
