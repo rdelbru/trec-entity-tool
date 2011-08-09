@@ -69,16 +69,16 @@ public class SindiceDEIndexing extends Indexing {
         throw new IllegalStateException("entry file missing");
       }
       Utils.getFile(reader, tarEntry.getSize(), entity.sb);
+      // Strip outgoing triples from rdf:type statements
+      Utils.sortAndFlattenNTriples(entity.sb, entity.outTuples, entity.type, true);
+      Utils.sortAndFlattenNTriples(entity.sb, entity.inTuples, null, false);
+      final int newLine = entity.sbMetadata.indexOf("\n");
+      entity.context = entity.sbMetadata.substring(0, newLine);
+      entity.subject = entity.sbMetadata.substring(newLine + 1);
     } catch (IOException e) {
-      logger.info("Error while Trying to get the incoming-triples.nt from {}, entry name: {}",
+      logger.info("Couldn't read a compressed file from {}, entry name: {}",
         input[inputPos].getAbsolutePath(), tarEntry.getName());
     }
-    // Strip outgoing triples from rdf:type statements
-    Utils.sortAndFlattenNTriples(entity.sb, entity.outTuples, entity.type, true);
-    Utils.sortAndFlattenNTriples(entity.sb, entity.inTuples, null, false);
-    final int newLine = entity.sbMetadata.indexOf("\n");
-    entity.context = entity.sbMetadata.substring(0, newLine);
-    entity.subject = entity.sbMetadata.substring(newLine + 1);
     return entity;
   }
   

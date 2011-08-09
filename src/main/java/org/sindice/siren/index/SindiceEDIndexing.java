@@ -47,7 +47,7 @@ public class SindiceEDIndexing extends Indexing {
 
   @Override
   protected String getPattern() {
-    return "ED-[0-9]+.tar.gz";
+    return "ED-[0-9]+\\.tar\\.gz";
   }
 
   @Override
